@@ -43,9 +43,9 @@ git clone --branch v${BWA_VERSION} https://github.com/lh3/bwa.git ${BWA_HOME}
 cd ${BWA_HOME} && make && cd
 
 ###############################################
-#PICARD = 'picard/2.17.11'
+#PICARD = 'picard/2.25.6'
 
-PICARD_VERSION=2.17.11
+PICARD_VERSION=2.25.6
 
 JAVA_HOME=/etc/alternatives/jre
 PICARD_HOME=${APPS_ROOT}/picard/${PICARD_VERSION}
@@ -55,9 +55,9 @@ mkdir -p ${PICARD_HOME}
 wget https://github.com/broadinstitute/picard/releases/download/${PICARD_VERSION}/picard.jar -O ${PICARD_JAR}
 
 ###############################################
-#GATK = 'gatk/4.1.3.0'
+#GATK = 'gatk/4.2.0.0'
 
-GATK_VERSION=4.1.3.0
+GATK_VERSION=4.2.0.0
 
 GATK_HOME=${APPS_ROOT}/gatk/${GATK_VERSION}
 
@@ -77,8 +77,8 @@ wget https://github.com/broadinstitute/gatk/releases/download/${GATK_VERSION}/ga
 # INSTALLED MOST CURRENT R
 
 ###############################################
-#HTSLIB 1.9
-HTSLIB_VERSION=1.9
+#HTSLIB 1.12
+HTSLIB_VERSION=1.12
 HTSLIB_HOME=${APPS_ROOT}/htslib/${HTSLIB_VERSION}
 
 MANPATH=$MANPATH:${HTSLIB_HOME}/share/man
@@ -102,7 +102,7 @@ wget https://github.com/samtools/htslib/releases/download/${HTSLIB_VERSION}/htsl
 ###############################################
 #SAMTOOLS = 'samtools/intel/1.9'
 
-SAMTOOLS_VERSION=1.9
+SAMTOOLS_VERSION=1.12
 SAMTOOLS_HOME=${APPS_ROOT}/samtools/${SAMTOOLS_VERSION}
 
 MANPATH=${SAMTOOLS_HOME}/share/man
@@ -147,17 +147,17 @@ export APPS_ROOT=/apps
 export BWA_VERSION=0.7.17
 export BWA_HOME=${APPS_ROOT}/bwa/${BWA_VERSION}
 export PATH=${BWA_HOME}:${PATH}
-export PICARD_VERSION=2.17.11
+export PICARD_VERSION=2.25.6
 export JAVA_HOME=/etc/alternatives/jre
 export PICARD_HOME=${APPS_ROOT}/picard/${PICARD_VERSION}
 export PICARD_JAR=${PICARD_HOME}/picard-${PICARD_VERSION}.jar
-export GATK_VERSION=4.1.3.0
+export GATK_VERSION=4.2.0.0
 export GATK_HOME=${APPS_ROOT}/gatk/${GATK_VERSION}
 export GATK_LOCAL_JAR=${GATK_HOME}/gatk-package-${GATK_VERSION}-local.jar
 export GATK_SPARK_JAR=${GATK_HOME}/gatk-package-${GATK_VERSION}-spark.jar
 export GATK_JAR=${GATK_HOME}/gatk-package-${GATK_VERSION}-local.jar
 export PATH=${GATK_HOME}:${PATH}
-export HTSLIB_VERSION=1.9
+export HTSLIB_VERSION=1.12
 export HTSLIB_HOME=${APPS_ROOT}/htslib/${HTSLIB_VERSION}
 export MANPATH=$MANPATH:${HTSLIB_HOME}/share/man
 export PATH=${PATH}:${HTSLIB_HOME}/bin
@@ -166,7 +166,7 @@ export PKG_CONFIG_PATH=${HTSLIB_HOME}/lib/pkgconfig
 export HTSLIB_HOME=${HTSLIB_HOME}
 export HTSLIB_INC=${HTSLIB_HOME}/include
 export HTSLIB_LIB=${HTSLIB_HOME}/lib
-export SAMTOOLS_VERSION=1.9
+export SAMTOOLS_VERSION=1.12
 export SAMTOOLS_HOME=${APPS_ROOT}/samtools/${SAMTOOLS_VERSION}
 export MANPATH=${SAMTOOLS_HOME}/share/man
 export PATH=${SAMTOOLS_HOME}/bin:${PATH}
