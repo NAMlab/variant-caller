@@ -32,6 +32,20 @@ APPS_ROOT=/apps
 mkdir -p ${APPS_ROOT}
 
 ###############################################
+#SRATOOLKIT = 'sratoolkit/2.11.0'
+
+SRATOOLKIT_VERSION=2.11.0
+
+SRATOOLKIT_HOME=${APPS_ROOT}/sratoolkit/${SRATOOLKIT_VERSION}
+PATH=${SRATOOLKIT_HOME}/bin:${PATH}
+
+wget https://ftp-trace.ncbi.nlm.nih.gov/sra/sdk/2.11.0/sratoolkit.2.11.0-centos_linux64.tar.gz \
+  && tar xzvf sratoolkit.2.11.0-centos_linux64.tar.gz  \
+  && mkdir ${APPS_ROOT}/sratoolkit \
+  && mv sratoolkit.2.11.0-centos_linux64 ${SRATOOLKIT_HOME} \
+  && rm sratoolkit.2.11.0-centos_linux64.tar.gz
+
+###############################################
 #BWA = 'bwa/intel/0.7.17'
 
 BWA_VERSION=0.7.17
@@ -144,6 +158,9 @@ R -e "install.packages('reshape', repos = 'http://cran.us.r-project.org')"
 R -e "install.packages('gplots', repos = 'http://cran.us.r-project.org')"
 %environment
 export APPS_ROOT=/apps
+export SRATOOLKIT_VERSION=2.11.0
+export SRATOOLKIT_HOME=${APPS_ROOT}/sratoolkit/${SRATOOLKIT_VERSION}
+export PATH=${SRATOOLKIT_HOME}/bin:${PATH}
 export BWA_VERSION=0.7.17
 export BWA_HOME=${APPS_ROOT}/bwa/${BWA_VERSION}
 export PATH=${BWA_HOME}:${PATH}
