@@ -3,5 +3,6 @@ Pipeline to call SNPs and indels from sequencing reads and a reference genome, b
 
 Changes:
 - [x] natively use Singularity instead of Docker (https://cloud.sylabs.io/library/merlin/default/namlab-variant-caller)
+- [x] start from a list of SRA accessions instead of fastq files
+- [ ] add trimmomatic
 - [ ] use bcftools/csq instead of snpEff
-- [ ] start from a list of SRA accessions instead of fastq files

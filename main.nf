@@ -26,35 +26,55 @@ ref = file(params.ref)
  * While doing this, count number of input samples
  */
 num_samples = 0
-Channel
-    .fromFilePairs( params.reads )
-    .ifEmpty { error "Cannot find any reads matching: ${params.reads}"  }
-    .tap { read_pairs_ch }
-    .subscribe({ num_samples += 1 })
+Channel.from(file(params.input_file).text).splitCsv(header: true)
+  .tap { accessions_ch }
+  .subscribe({ num_samples += 1})
 
-process align {
+process build_index {
+  input:
+  path "genome.fa" from params.ref
+
+  output:
+  path "genome*" into ref_index
+
+  script:
+  """
+  bwa index genome.fa
+  samtools faidx genome.fa
+  gatk CreateSequenceDictionary -R genome.fa
+  """
+}
+
+process download_and_align {
     publishDir "${params.out}/aligned_reads", mode:'copy'
+    scratch params.scratch_dir
+    errorStrategy 'retry'
+    maxRetries 4
 	
     input:
-    set pair_id, file(reads) from read_pairs_ch
+    val accession from accessions_ch
+    path "*" from ref_index
+    path "genome.fa" from params.ref
      
     output:
     set val(pair_id), file("${pair_id}_aligned_reads.sam") \
 	into aligned_reads_ch
 	
     script:
+    pair_id = accession.sra_run_id
     readGroup = \
 	"@RG\\tID:${pair_id}\\tLB:${pair_id}\\tPL:${params.pl}\\tPM:${params.pm}\\tSM:${pair_id}"
     """
+    fasterq-dump ${pair_id}
     bwa mem \
 	-K 100000000 \
 	-v 3 \
 	-t ${task.cpus} \
 	-Y \
 	-R \"${readGroup}\" \
-	$ref \
-	${reads[0]} \
-	${reads[1]} \
+	"genome.fa" \
+	${pair_id}_1.fastq \
+	${pair_id}_2.fastq \
 	> ${pair_id}_aligned_reads.sam
     """
 }
@@ -98,6 +118,8 @@ process getMetrics {
 	val(round), \
 	file(sorted_dedup_reads) \
 	from sorted_dedup_ch_for_metrics
+  path "*" from ref_index
+  path "genome.fa" from params.ref
 
     output:
     set val(pair_id), 
@@ -111,7 +133,7 @@ process getMetrics {
     """
     java -jar \$PICARD_JAR \
         CollectAlignmentSummaryMetrics \
-	R=${params.ref} \
+	R=genome.fa \
         I=${sorted_dedup_reads} \
 	O=${pair_id}_alignment_metrics.txt
     java -jar \$PICARD_JAR \
@@ -137,6 +159,8 @@ process haplotypeCaller {
 	val(round), \
 	file(input_bam) \
 	from bam_for_variant_calling.mix(recalibrated_bam_ch.take(num_samples))
+  path "*" from ref_index
+  path "genome.fa" from params.ref
 
     output:
     set val(pair_id), val(round), \
@@ -146,7 +170,7 @@ process haplotypeCaller {
     script:
     """
     gatk HaplotypeCaller \
-	-R $ref \
+	-R "genome.fa" \
 	-I $input_bam \
 	-O ${pair_id}_raw_variants_${round}.vcf \
     """
@@ -158,6 +182,8 @@ process selectVariants {
 	val(round), \
 	file(raw_variants) \
 	from hc_output_ch
+  path "*" from ref_index
+  path "genome.fa" from params.ref
 
     output:
     set val(pair_id), \
@@ -172,12 +198,12 @@ process selectVariants {
     script:
     """
     gatk SelectVariants \
-	-R $ref \
+	-R genome.fa \
 	-V $raw_variants \
 	-select-type SNP \
 	-O ${pair_id}_raw_snps_${round}.vcf
     gatk SelectVariants \
-        -R $ref \
+        -R "genome.fa" \
         -V $raw_variants \
         -select-type INDEL \
         -O ${pair_id}_raw_indels_${round}.vcf
@@ -191,6 +217,8 @@ process filterSnps {
     set val(pair_id),
 	val(round),
 	file(raw_snps) from raw_snps_ch
+  path "*" from ref_index
+  path "genome.fa" from params.ref
 
     output:
     set val(pair_id), 
@@ -202,7 +230,7 @@ process filterSnps {
     script:
     """
     gatk VariantFiltration \
-	-R $ref \
+	-R genome.fa \
 	-V $raw_snps \
 	-O ${pair_id}_filtered_snps_${round}.vcf \
 	-filter-name "QD_filter" -filter "QD < 2.0" \
@@ -222,6 +250,8 @@ process filterIndels {
 	val(round), \
 	file(raw_indels) \
 	from raw_indels_ch
+  path "*" from ref_index
+  path "genome.fa" from params.ref
 
     output:
     set val(pair_id), \
@@ -232,7 +262,7 @@ process filterIndels {
     script:
     """
     gatk VariantFiltration \
-        -R $ref \
+        -R genome.fa \
         -V $raw_indels \
         -O ${pair_id}_filtered_indels_${round}.vcf \
 	-filter-name "QD_filter" -filter "QD < 2.0" \
@@ -263,6 +293,8 @@ process bqsr{
 	from bam_for_bqsr
 	.join(filtered_snps_for_recal)
 	.join(filtered_indels_for_recal)
+  path "*" from ref_index
+  path "genome.fa" from params.ref
     
     output:    
     set val(pair_id), \
@@ -295,18 +327,18 @@ process bqsr{
         -V $filtered_indels \
         -O ${pair_id}_bqsr_indels.vcf
     gatk BaseRecalibrator \
-	-R $ref \
+	-R genome.fa \
 	-I $input_bam \
 	--known-sites ${pair_id}_bqsr_snps.vcf \
 	--known-sites ${pair_id}_bqsr_indels.vcf \
 	-O ${pair_id}_recal_data.table
     gatk ApplyBQSR \
-        -R $ref \
+        -R genome.fa \
         -I $input_bam \
         -bqsr ${pair_id}_recal_data.table \
         -O ${pair_id}_recal.bam
     gatk BaseRecalibrator \
-        -R $ref \
+        -R genome.fa \
 	-I ${pair_id}_recal.bam \
         --known-sites ${pair_id}_bqsr_snps.vcf \
 	--known-sites ${pair_id}_bqsr_indels.vcf \
