@@ -46,7 +46,9 @@ process build_index {
 }
 
 process download_and_align {
-    publishDir "${params.out}/aligned_reads", mode:'copy'
+    if(params.export_aligned_reads)
+      publishDir "${params.out}/aligned_reads", mode:'copy'
+
     scratch params.scratch_dir
     errorStrategy 'retry'
     maxRetries 4
@@ -80,7 +82,8 @@ process download_and_align {
 }
 
 process markDuplicatesSpark {
-    publishDir "${params.out}/dedup_sorted", mode:'copy'
+    if(params.export_dedup_sorted)
+      publishDir "${params.out}/dedup_sorted", mode:'copy'
 
     input:
     set val(pair_id), file(aligned_reads) from aligned_reads_ch
@@ -111,7 +114,8 @@ process markDuplicatesSpark {
 }
 
 process getMetrics {
-    publishDir "${params.out}/metrics", mode:'copy'
+    if(params.export_metrics)
+      publishDir "${params.out}/metrics", mode:'copy'
 
     input:
     set val(pair_id), \
@@ -211,7 +215,8 @@ process selectVariants {
 }
 
 process filterSnps {
-    publishDir "${params.out}/filtered_snps", mode:'copy'
+    if(params.export_snps)
+      publishDir "${params.out}/filtered_snps", mode:'copy'
     
     input:
     set val(pair_id),
@@ -243,7 +248,8 @@ process filterSnps {
 }
 
 process filterIndels {
-    publishDir "${params.out}/filtered_indels", mode:'copy'
+    if(params.export_indels)
+      publishDir "${params.out}/filtered_indels", mode:'copy'
     
     input:
     set val(pair_id), \
@@ -279,7 +285,8 @@ filtered_snps_ch_1.filter({it[1] == 1}).tap{filtered_snps_for_recal}.tap{snps_1_
 filtered_snps_ch_2.filter({it[1] == 2}).tap{snps_2_qc_ch}.tap{filtered_snps_for_snpeff}
 
 process bqsr{
-    publishDir "${params.out}/bqsr", mode:'copy'
+    if(params.export_bqsr)
+      publishDir "${params.out}/bqsr", mode:'copy'
 
     input:
     set val(pair_id), \
@@ -347,7 +354,8 @@ process bqsr{
 }
 
 process analyzeCovariates{
-    publishDir "${params.out}/bqsr", mode:'copy'
+    if(params.export_covariates)
+      publishDir "${params.out}/bqsr", mode:'copy'
 
     input:
     set val(pair_id), file(recal_table), file(post_recal_table) \
@@ -367,7 +375,8 @@ process analyzeCovariates{
 }
 
 process snpEff {
-    publishDir "${params.out}/snpeff", mode:'copy'    
+    if(params.export_snpeff)
+      publishDir "${params.out}/snpeff", mode:'copy'    
 
     input:
     set val(pair_id), \
